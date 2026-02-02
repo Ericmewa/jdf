@@ -2324,9 +2324,28 @@ const DeferralDetailsModal = ({ deferral, open, onClose, onAction, onApplyForExt
         </Card>
 
         {/* Enhanced Approval Flow Section */}
-        <Card size="small" title={<span style={{ color: PRIMARY_BLUE, fontSize: 14 }}>Approval Flow</span>} style={{ marginBottom: 18 }}>
+        <Card 
+          size="small" 
+          title={<span style={{ color: PRIMARY_BLUE, fontSize: 14 }}>Approval Flow</span>} 
+          style={{ marginBottom: 18, opacity: localDeferral.status === 'rejected' ? 0.6 : 1 }}
+        >
+          {localDeferral.status === 'rejected' && (
+            <div style={{
+              marginBottom: 16,
+              padding: 12,
+              backgroundColor: '#fff1f0',
+              border: `1px solid ${ERROR_RED}40`,
+              borderRadius: 6,
+              textAlign: 'center'
+            }}>
+              <ExclamationCircleOutlined style={{ color: ERROR_RED, marginRight: 8 }} />
+              <Text strong style={{ color: ERROR_RED }}>
+                This deferral has been rejected and cannot be further processed
+              </Text>
+            </div>
+          )}
           {/* Approver List */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, pointerEvents: localDeferral.status === 'rejected' ? 'none' : 'auto' }}>
             {(function () {
               const approvers = [];
               let hasApprovers = false;
@@ -2451,6 +2470,34 @@ const DeferralDetailsModal = ({ deferral, open, onClose, onAction, onApplyForExt
                             Approved
                           </Tag>
                         )}
+                        {approver.isRejected && (
+                          <Tag
+                            icon={<CloseCircleOutlined />}
+                            color="error"
+                            style={{ 
+                              fontSize: 11, 
+                              padding: '2px 10px',
+                              borderRadius: 4,
+                              fontWeight: 500
+                            }}
+                          >
+                            Rejected
+                          </Tag>
+                        )}
+                        {approver.isReturned && (
+                          <Tag
+                            icon={<ExclamationCircleOutlined />}
+                            color="warning"
+                            style={{ 
+                              fontSize: 11, 
+                              padding: '2px 10px',
+                              borderRadius: 4,
+                              fontWeight: 500
+                            }}
+                          >
+                            Returned
+                          </Tag>
+                        )}
                         {approver.isCurrent && !approver.isApproved && !approver.isRejected && !approver.isReturned && (
                           <Tag color="processing" style={{ fontSize: 11, padding: '2px 10px', borderRadius: 4 }}>
                             Current
@@ -2479,7 +2526,21 @@ const DeferralDetailsModal = ({ deferral, open, onClose, onAction, onApplyForExt
                         </div>
                       )}
 
-                      {approver.isCurrent && !approver.isApproved && !approver.isRejected && !approver.isReturned && (
+                      {approver.isRejected && approver.rejectionDate && (
+                        <div style={{ fontSize: 12, color: ERROR_RED, marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <CloseCircleOutlined style={{ fontSize: 11 }} />
+                          Rejected: {dayjs(approver.rejectionDate).format('DD MMM YYYY HH:mm')}
+                        </div>
+                      )}
+
+                      {approver.isReturned && approver.returnDate && (
+                        <div style={{ fontSize: 12, color: WARNING_ORANGE, marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <ExclamationCircleOutlined style={{ fontSize: 11 }} />
+                          Returned: {dayjs(approver.returnDate).format('DD MMM YYYY HH:mm')}
+                        </div>
+                      )}
+
+                      {approver.isCurrent && !approver.isApproved && !approver.isRejected && !approver.isReturned && localDeferral.status !== 'rejected' && (
                         <div style={{ fontSize: 12, color: PRIMARY_BLUE, marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
                           <ClockCircleOutlined style={{ fontSize: 11 }} />
                           Pending Approval
@@ -2493,7 +2554,7 @@ const DeferralDetailsModal = ({ deferral, open, onClose, onAction, onApplyForExt
                       )}
                     </div>
 
-                    {approver.isCurrent && !approver.isApproved && !approver.isRejected && !approver.isReturned && canSendReminder() && (
+                    {approver.isCurrent && !approver.isApproved && !approver.isRejected && !approver.isReturned && localDeferral.status !== 'rejected' && canSendReminder() && (
                       <Popconfirm
                         title="Send Reminder"
                         description={`Send reminder email to ${approverName}?`}
@@ -2776,12 +2837,12 @@ const DeferralPending = ({ userId = "rm_current" }) => {
 
   const rejectedData = useMemo(() => filteredData.filter(d => {
     const s = (d.status || '').toLowerCase();
-    return s === 'returned_for_rework';
+    return ['returned_for_rework', 'returned_by_creator', 'returned_by_checker'].includes(s);
   }), [filteredData]);
 
   const closedData = useMemo(() => filteredData.filter(d => {
     const s = (d.status || '').toLowerCase();
-    return ['closed', 'deferral_closed', 'closed_by_co', 'closed_by_creator', 'withdrawn', 'rejected', 'deferral_rejected'].includes(s);
+    return ['closed', 'deferral_closed', 'closed_by_co', 'closed_by_creator', 'withdrawn', 'rejected', 'deferral_rejected', 'returned_for_rework', 'returned_by_creator', 'returned_by_checker'].includes(s);
   }), [filteredData]);
 
   const currentData = activeTab === 'pending' ? pendingData : activeTab === 'approved' ? approvedData : activeTab === 'rejected' ? rejectedData : closedData;

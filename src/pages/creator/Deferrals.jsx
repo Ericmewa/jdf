@@ -700,7 +700,10 @@ const Deferrals = ({ userId }) => {
         // Only show if both creator and checker have approved
         return hasCreatorApproved && hasCheckerApproved;
       }
-      if (activeTab === "closed") return closedStatuses.includes(s);
+      if (activeTab === "closed") {
+        // COMPLETED tab: Show all completed statuses (closed, rejected, returned)
+        return closedStatuses.includes(s) || rejectedStatuses.includes(s) || returnedStatuses.includes(s);
+      }
       return true;
     });
 

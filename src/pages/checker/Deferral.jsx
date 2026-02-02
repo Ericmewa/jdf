@@ -689,6 +689,12 @@ const Deferrals = ({ userId }) => {
       "closed_by_co",
       "closed_by_creator",
     ];
+    const rejectedStatuses = ["rejected", "deferral_rejected"];
+    const returnedStatuses = [
+      "returned_for_rework",
+      "returned_by_creator",
+      "returned_by_checker",
+    ];
 
     let base = deferrals.filter((d) => {
       const s = (d.status || "").toString().toLowerCase();
@@ -711,7 +717,10 @@ const Deferrals = ({ userId }) => {
         return hasCreatorApproved && hasCheckerApproved;
       }
 
-      if (activeTab === "completed") return completedStatuses.includes(s);
+      if (activeTab === "completed") {
+        // COMPLETED tab: Show all completed statuses (closed, rejected, returned)
+        return completedStatuses.includes(s) || rejectedStatuses.includes(s) || returnedStatuses.includes(s);
+      }
       return true;
     });
 
