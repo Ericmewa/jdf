@@ -1,6 +1,6 @@
-import React, { useState } from "react";
-import { Table, Tag, Empty, Spin } from "antd";
-import { FileTextOutlined } from "@ant-design/icons";
+import React, { useMemo, useState } from "react";
+import { Card, Col, Input, Row, Table, Tag, Empty, Spin } from "antd";
+import { FileTextOutlined, SearchOutlined } from "@ant-design/icons";
 import ExtensionApplicationModal from "./modals/ExtensionApplicationModal";
 import dayjs from "dayjs";
 
@@ -10,9 +10,33 @@ const ERROR_RED = "#ff4d4f";
 const WARNING_ORANGE = "#faad14";
 const SECONDARY_PURPLE = "#7e6496";
 
-const ExtensionApplicationsTab = ({ extensions, loading }) => {
+const ExtensionApplicationsTab = ({
+    extensions,
+    loading,
+    tableClassName = "deferral-pending-table",
+    useSearchCard = false,
+    useSearchRow = false,
+    useTableCard = false,
+    inputSize = "middle",
+    useMyQueuePagination = false,
+    scrollX = 1000,
+}) => {
     const [extensionModalOpen, setExtensionModalOpen] = useState(false);
     const [selectedExtension, setSelectedExtension] = useState(null);
+    const [searchText, setSearchText] = useState("");
+
+    const filteredExtensions = useMemo(() => {
+        if (!extensions || extensions.length === 0) return [];
+        if (!searchText) return extensions;
+        const q = searchText.toLowerCase();
+        return extensions.filter((ext) => {
+            const deferralNo = (ext.deferralNumber || "").toLowerCase();
+            const dclNo = (ext.dclNumber || ext.dclNo || "").toLowerCase();
+            const customer = (ext.customerName || "").toLowerCase();
+            const loanType = (ext.loanType || ext.deferral?.loanType || "").toLowerCase();
+            return deferralNo.includes(q) || dclNo.includes(q) || customer.includes(q) || loanType.includes(q);
+        });
+    }, [extensions, searchText]);
     const columns = [
         {
             title: "Deferral No",
@@ -178,28 +202,100 @@ const ExtensionApplicationsTab = ({ extensions, loading }) => {
 
     return (
         <>
-            <div className="deferral-pending-table">
-                <Table
-                    columns={columns}
-                    dataSource={extensions}
-                    rowKey="_id"
-                    size="middle"
-                    pagination={{
-                        pageSize: 10,
-                        showSizeChanger: true,
-                        pageSizeOptions: ["10", "20", "50"],
-                        position: ["bottomCenter"],
-                        showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} extension requests`
-                    }}
-                    scroll={{ x: 1000 }}
-                    onRow={(record) => ({
-                        onClick: () => {
-                            setSelectedExtension(record);
-                            setExtensionModalOpen(true);
-                        }
-                    })}
-                />
-            </div>
+            {useSearchRow ? (
+                <Card size="small" style={{ marginBottom: 16 }}>
+                    <Row gutter={16}>
+                        <Col md={12}>
+                            <Input
+                                prefix={<SearchOutlined />}
+                                placeholder="Search by Customer, DCL, or ID"
+                                value={searchText}
+                                onChange={(e) => setSearchText(e.target.value)}
+                                allowClear
+                                size={inputSize}
+                            />
+                        </Col>
+                    </Row>
+                </Card>
+            ) : useSearchCard ? (
+                <Card size="small" style={{ marginBottom: 16 }}>
+                    <Input
+                        prefix={<SearchOutlined />}
+                        placeholder="Search by Customer, DCL, or ID"
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                        allowClear
+                        size={inputSize}
+                    />
+                </Card>
+            ) : (
+                <div style={{ marginBottom: 16 }}>
+                    <Input
+                        prefix={<SearchOutlined />}
+                        placeholder="Search by Customer, DCL, or ID"
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                        allowClear
+                        size={inputSize}
+                    />
+                </div>
+            )}
+
+            {useTableCard ? (
+                <Card>
+                    <div className={tableClassName}>
+                        <Table
+                            columns={columns}
+                            dataSource={filteredExtensions}
+                            rowKey="_id"
+                            size="middle"
+                            pagination={{
+                                pageSize: 10,
+                                showSizeChanger: true,
+                                showQuickJumper: useMyQueuePagination ? true : undefined,
+                                pageSizeOptions: ["10", "20", "50"],
+                                position: ["bottomCenter"],
+                                showTotal: (total, range) => useMyQueuePagination
+                                    ? `${range[0]}-${range[1]} of ${total} items`
+                                    : `${range[0]}-${range[1]} of ${total} extension requests`
+                            }}
+                            scroll={{ x: scrollX }}
+                            onRow={(record) => ({
+                                onClick: () => {
+                                    setSelectedExtension(record);
+                                    setExtensionModalOpen(true);
+                                }
+                            })}
+                        />
+                    </div>
+                </Card>
+            ) : (
+                <div className={tableClassName}>
+                    <Table
+                        columns={columns}
+                        dataSource={filteredExtensions}
+                        rowKey="_id"
+                        size="middle"
+                        pagination={{
+                            pageSize: 10,
+                            showSizeChanger: true,
+                            showQuickJumper: useMyQueuePagination ? true : undefined,
+                            pageSizeOptions: ["10", "20", "50"],
+                            position: ["bottomCenter"],
+                            showTotal: (total, range) => useMyQueuePagination
+                                ? `${range[0]}-${range[1]} of ${total} items`
+                                : `${range[0]}-${range[1]} of ${total} extension requests`
+                        }}
+                        scroll={{ x: scrollX }}
+                        onRow={(record) => ({
+                            onClick: () => {
+                                setSelectedExtension(record);
+                                setExtensionModalOpen(true);
+                            }
+                        })}
+                    />
+                </div>
+            )}
 
             <ExtensionApplicationModal
                 open={extensionModalOpen}
@@ -208,9 +304,7 @@ const ExtensionApplicationsTab = ({ extensions, loading }) => {
                     setSelectedExtension(null);
                 }}
                 deferral={{
-                    ...(selectedExtension?.deferral || {}),
                     deferralNumber: selectedExtension?.deferralNumber,
-                    customerName: selectedExtension?.customerName,
                     daysSought: selectedExtension?.currentDaysSought,
                     nextDueDate: selectedExtension?.deferral?.nextDueDate,
                     nextDocumentDueDate: selectedExtension?.deferral?.nextDocumentDueDate

@@ -4,7 +4,7 @@
 export async function notifyFirstApprover(deferralData = {}) {
   try {
     // Use sender/recipient from deferralData when available (fallbacks for local dev)
-    const from = deferralData.from || 'ericmewa5@gmail.com';
+    const from = deferralData.from || 'onyie22@gmail.com';
     const to = (deferralData.currentApprover && deferralData.currentApprover.email) || deferralData.to || 'ericouma4188@gmail.com';
 
     const customerName = deferralData.customerName || deferralData.createdBy || 'Customer';

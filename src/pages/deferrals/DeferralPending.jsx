@@ -1865,6 +1865,7 @@ const DeferralDetailsModal = ({ deferral, open, onClose, onAction, onApplyForExt
   const status = (localDeferral.status || 'deferral_requested').toLowerCase();
   const isPendingApproval = status === 'deferral_requested';
   const isReturnedForRework = status === 'returned_for_rework';
+  const isCompleted = ['closed', 'deferral_closed', 'closed_by_co', 'closed_by_creator', 'withdrawn', 'rejected', 'deferral_rejected', 'returned_for_rework', 'returned_by_creator', 'returned_by_checker'].includes(status);
 
   // Calculate if deferral is fully approved (by all approvers, creator, and checker)
   const hasCreatorApproved = localDeferral.creatorApprovalStatus === 'approved';
@@ -2000,8 +2001,8 @@ const DeferralDetailsModal = ({ deferral, open, onClose, onAction, onApplyForExt
             </Button>
           ),
 
-          // Recall button - Available unless deferral is fully approved or returned for rework
-          !isFullyApproved && !isReturnedForRework && (
+          // Recall button - Available unless deferral is fully approved, returned for rework, or completed
+          !isFullyApproved && !isReturnedForRework && !isCompleted && (
             <Button
               key="recall"
               onClick={handleRecallDeferral}
@@ -2012,8 +2013,8 @@ const DeferralDetailsModal = ({ deferral, open, onClose, onAction, onApplyForExt
             </Button>
           ),
 
-          // Withdraw button - Available unless deferral is fully approved
-          !isFullyApproved && (
+          // Withdraw button - Available unless deferral is fully approved or completed
+          !isFullyApproved && !isCompleted && (
             <Button
               key="withdraw"
               type="default"
@@ -2028,8 +2029,7 @@ const DeferralDetailsModal = ({ deferral, open, onClose, onAction, onApplyForExt
           // Apply for Extension button (only for approved deferrals without existing extensions)
           (status === 'deferral_approved' || status === 'approved') && 
           onApplyForExtension && 
-          !myExtensions.some(ext => (ext.deferral === localDeferral._id || ext.deferral?._id === localDeferral._id || ext.deferralId === localDeferral._id)) && 
-          !hasExistingExtension && (
+          !myExtensions.some(ext => (ext.deferral === localDeferral._id || ext.deferral?._id === localDeferral._id || ext.deferralId === localDeferral._id)) && (
             <Button
               key="extension"
               type="primary"

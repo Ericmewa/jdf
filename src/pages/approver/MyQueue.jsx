@@ -1071,8 +1071,8 @@ import {
 import dayjs from "dayjs";
 import deferralApi from "../../service/deferralApi.js";
 import getFacilityColumns from '../../utils/facilityColumns';
-import ApproverExtensionTab from "../../components/ApproverExtensionTab";
-import { useGetApproverExtensionsQuery, useApproveExtensionMutation, useRejectExtensionMutation } from "../../api/extensionApi";
+import ExtensionApplicationsTab from "../../components/ExtensionApplicationsTab";
+import { useGetApproverExtensionsQuery } from "../../api/extensionApi";
 import { useNavigate } from "react-router-dom";
 
 const { RangePicker } = DatePicker;
@@ -2478,36 +2478,11 @@ const MyQueue = () => {
   // Fetch pending extension applications
   const { data: queueExtensions = [], isLoading: extensionsLoading } = useGetApproverExtensionsQuery();
   
-  // Extension approval/rejection mutations
-  const [approveExtension, { isLoading: approvingExtension }] = useApproveExtensionMutation();
-  const [rejectExtension, { isLoading: rejectingExtension }] = useRejectExtensionMutation();
- 
   // State for modal
   const [selectedDeferral, setSelectedDeferral] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [postingComment, setPostingComment] = useState(false);
-
-  // Extension approval handlers
-  const handleApproveExtension = async (extensionId, comment) => {
-    try {
-      await approveExtension({ id: extensionId, comment }).unwrap();
-      message.success('Extension approved successfully');
-    } catch (error) {
-      message.error('Failed to approve extension');
-      throw error;
-    }
-  };
-
-  const handleRejectExtension = async (extensionId, reason) => {
-    try {
-      await rejectExtension({ id: extensionId, reason }).unwrap();
-      message.success('Extension rejected successfully');
-    } catch (error) {
-      message.error('Failed to reject extension');
-      throw error;
-    }
-  };
 
   // Live data - load pending deferrals from API
   const [deferrals, setDeferrals] = useState([]);
@@ -2804,6 +2779,58 @@ const MyQueue = () => {
       background-color: rgba(181, 211, 52, 0.1) !important;
       cursor: pointer;
     }
+
+    /* Match DeferralPending extension tab styling */
+    .deferral-pending-table .ant-table-wrapper {
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(22, 70, 121, 0.08);
+      border: 1px solid #e0e0e0;
+    }
+    .deferral-pending-table .ant-table-thead > tr > th {
+      background-color: #f7f7f7 !important;
+      color: ${PRIMARY_BLUE} !important;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 14px 12px !important;
+      border-bottom: 3px solid ${ACCENT_LIME} !important;
+      border-right: none !important;
+      cursor: default !important;
+    }
+    .deferral-pending-table .ant-table-thead > tr > th:hover {
+      background-color: #f7f7f7 !important;
+    }
+    .deferral-pending-table .ant-table-tbody > tr > td {
+      border-bottom: 1px solid #f0f0f0 !important;
+      border-right: none !important;
+      padding: 12px 12px !important;
+      font-size: 13px;
+      color: #333;
+    }
+    .deferral-pending-table .ant-table-tbody > tr.ant-table-row:hover > td {
+      background-color: rgba(181, 211, 52, 0.1) !important;
+      cursor: pointer;
+    }
+    .deferral-pending-table .ant-table-row:hover .ant-table-cell:last-child {
+      background-color: rgba(181, 211, 52, 0.1) !important;
+    }
+    .deferral-pending-table .ant-pagination .ant-pagination-item-active {
+      background-color: ${ACCENT_LIME} !important;
+      borderColor: ${ACCENT_LIME} !important;
+    }
+    .deferral-pending-table .ant-pagination .ant-pagination-item-active a {
+      color: ${PRIMARY_BLUE} !important;
+      font-weight: 600;
+    }
+    .deferral-pending-table .ant-table-column-sorter {
+      display: none !important;
+    }
+    .deferral-pending-table .ant-table-column-sorters {
+      cursor: default !important;
+    }
+    .deferral-pending-table .ant-table-column-sorters:hover {
+      background: none !important;
+    }
   `;
 
   return (
@@ -2892,14 +2919,15 @@ const MyQueue = () => {
           tab={`Extension Applications (${queueExtensions.length})`} 
           key="extensions" 
         >
-          <ApproverExtensionTab 
+          <ExtensionApplicationsTab
             extensions={queueExtensions}
             loading={extensionsLoading}
-            onApprove={handleApproveExtension}
-            onReject={handleRejectExtension}
-            approvingId={undefined}
-            rejectingId={undefined}
-            tabType="queue"
+            tableClassName="myqueue-table"
+            useSearchRow
+            useTableCard
+            inputSize="large"
+            useMyQueuePagination
+            scrollX={1200}
           />
         </Tabs.TabPane>
       </Tabs>

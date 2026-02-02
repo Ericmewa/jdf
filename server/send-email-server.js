@@ -7,7 +7,7 @@ dotenv.config();
 
 const PORT = process.env.EMAIL_SERVER_PORT || 4001;
 const SENDGRID_KEY = process.env.SENDGRID_API_KEY;
-const EMAIL_FROM = process.env.EMAIL_FROM || "ericmewa5@gmail.com";
+const EMAIL_FROM = process.env.EMAIL_FROM || "onyie22@gmail.com";
 
 // File-backed queue for retrying failed sends
 const QUEUE_FILE = path.resolve(process.cwd(), "server", "pending-emails.json");
